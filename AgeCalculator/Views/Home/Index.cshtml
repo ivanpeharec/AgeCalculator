@@ -1,0 +1,104 @@
+﻿@model AgeCalculator.Models.DatePickerModel
+@{
+    ViewBag.Title = "Home Page";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link href="~/Content/themes/base/jquery-ui.min.css" rel="stylesheet" />
+
+<div class="row">
+    <div class="col-md-12">
+        @using (Html.BeginForm())
+        {
+            <br />
+            <div class="title">
+                Please select your date of birth:
+            </div>
+            <br />
+            @Html.EditorFor(model => model.DateOfBirth, new { htmlAttributes = new { @class = "datepicker" } })
+        }
+    </div>
+</div>
+<br />
+
+<div class="row">
+    <div class="col-md-12">
+        <button class="btn btn-primary" id="calculate">Calculate</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div id="ageContainer">
+            <br />
+            <div class="title">
+                You were born before exactly this much:
+            </div>
+            <div class="months"> </div>
+            <div class="days"> </div>
+            <div class="hours"> </div>
+            <div class="minutes"> </div>
+            <div class="seconds"> </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+
+    @Scripts.Render("~/bundles/jqueryui")
+    @Styles.Render("~/Content/cssjqryUi")
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.datepicker').datepicker({
+                dateFormat: "dd/mm/yy",
+                changeMonth: true,
+                changeYear: true,
+                yearRange: "1890:+0",
+                showOn: "both",
+                buttonText: "<i class='fa fa-calendar'></i>",
+                maxDate: 0
+            });
+        });
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#calculate").click(function () {
+                var today = new Date();
+                var currentDate = today.getDate();
+                var selectedDate = $(".datepicker").datepicker("getDate");
+
+                if (selectedDate == null) {
+                    alert("You need to enter the date of birth!");
+                }
+                else if (selectedDate.getDate() > currentDate) {
+                    alert("The selected date cannot be in the future!");
+                }
+                else {
+                    var day = selectedDate.getDate(); // yields date
+                    var month = selectedDate.getMonth() + 1; // yields month (add one as '.getMonth()' is zero indexed)
+                    var year = selectedDate.getFullYear(); // yields year
+
+                    // After this, construct a string with the above results as below.
+                    var dateOfBirth = year + "-" + month + "-" + day + "T00:00:00";
+                    $.ajax({
+                        type: "POST",
+                        url: '@Url.Action("GetElapsedTime", "Home")?fromDate=' + dateOfBirth,
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.status == "ok") {
+                                document.getElementById("ageContainer").style.display = "inherit";
+                                $(".months").html(data.months + " months");
+                                $(".days").html(data.days + " days");
+                                $(".hours").html(data.hours + " hours");
+                                $(".minutes").html(data.minutes + " minutes");
+                                $(".seconds").html(data.seconds + " seconds");
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}
